@@ -11,7 +11,8 @@ Bu proje, ESP32-CAM kullanarak analog doğalgaz (veya su/gaz) sayaçlarını yap
 * **Gelişmiş Geçmiş Tablosu:** Her okuma geçmişe kaydedilir. Fatura dönemi değiştiğinde tabloda otomatik ayrım çizgisi oluşur ve tıklanan okumanın geçmiş fotoğrafı Modal penceresinde izlenebilir.
 * **Elektrik Kesintisine Karşı Korumalı:** Tüm ayarlar ve geçmiş veriler SD kartta güvenle saklanır.
 
-<img width="242" height="394" alt="res1" src="https://github.com/user-attachments/assets/5b7d4233-85b4-4b93-bd68-95b67e6f32cc" /> <img width="243" height="384" alt="res2" src="https://github.com/user-attachments/assets/d11d3e12-5775-46f3-8f78-21db52a25667" /><img width="237" height="409" alt="res5" src="https://github.com/user-attachments/assets/23efc36a-2695-4c05-8258-932b1bd27ed3" />
+<img width="239" height="379" alt="res1" src="https://github.com/user-attachments/assets/3925cb88-b3d3-4692-a110-8c47b4c5e465" />
+ <img width="243" height="384" alt="res2" src="https://github.com/user-attachments/assets/d11d3e12-5775-46f3-8f78-21db52a25667" /><img width="237" height="409" alt="res5" src="https://github.com/user-attachments/assets/23efc36a-2695-4c05-8258-932b1bd27ed3" />
 <img width="244" height="284" alt="res4" src="https://github.com/user-attachments/assets/060043e0-1bd8-45ee-b5fa-6d4765b113bc" />
 <img width="241" height="410" alt="res3" src="https://github.com/user-attachments/assets/4b9b70f6-9855-404c-94cd-3ccad2565fdd" />
 
