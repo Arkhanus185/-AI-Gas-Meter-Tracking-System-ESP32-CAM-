@@ -5,10 +5,11 @@
 #include <WebServer.h>
 #include "time.h"
 #include <ArduinoJson.h>
+#include "esp_task_wdt.h" // YENİ: Donanım Bekçisi (Watchdog) Kütüphanesi
 
 // --- AĞ AYARLARI ---
-const char* ssid = "2.4GHz wifi adınız";
-const char* password = "wifi sifresi";
+const char* ssid = "Wifi_adi";
+const char* password = "wifi_sifresi";
 
 IPAddress local_IP(192, 168, 1, 55);
 IPAddress gateway(192, 168, 1, 1);
@@ -38,12 +39,16 @@ int config_mailYuzde = 90;
 String config_mailListesi = ""; 
 String config_webhookUrl = ""; 
 int config_lastMailMonth = -1; 
-int config_autoUpdateFatura = 0; // YENİ: Ay Sonu Otomatik Güncelleme Checkbox (0:Kapalı, 1:Açık)
+int config_autoUpdateFatura = 0; 
 
 String last_auto_trigger_date = "";
 int last_checked_month = -1;
 long photo_update_time = 0; 
-bool isConfigLoaded = false; // Güvenlik Kilidi
+bool isConfigLoaded = false; 
+
+// YENİ: Wi-Fi Kopma Takibi İçin Sayaç
+unsigned long previousMillis = 0;
+const long interval = 30000; // 30 saniyede bir Wi-Fi kontrolü
 
 #ifdef __cplusplus
 extern "C" { uint8_t temprature_sens_read(); }
@@ -56,6 +61,10 @@ extern "C" { uint8_t temprature_sens_read(); }
 
 void performAutoReading() {
   addLog("Otomatik Zamanlayici Tetiklendi.");
+  
+  // İşlem uzun süreceği için Bekçi Köpeğini sıfırla
+  esp_task_wdt_reset(); 
+  
   applyCameraSettings((framesize_t)config_framesize); delay(200); 
   if(config_useFlash) { ledcWrite(pwmChannel, config_flashPWM); delay(config_waitTime); }
   
@@ -75,13 +84,21 @@ void performAutoReading() {
   SD_MMC.remove("/latest.jpg"); File latest = SD_MMC.open("/latest.jpg", FILE_WRITE); latest.write(fb->buf, fb->len); latest.close();
   esp_camera_fb_return(fb); 
   
+  esp_task_wdt_reset(); // Gemini/TFLite öncesi Bekçiyi tekrar sıfırla
   String resultJson = (config_aiEngine == "gemini") ? askGemini(String(fileName)) : askTFLite(String(fileName));
+  
   photo_update_time = millis(); 
   addLog("Otomatik Okuma Tamamlandi.");
 }
 
 void setup() {
   Serial.begin(115200);
+  
+  // YENİ: Watchdog (Bekçi Köpeği) Kurulumu
+  // 45 Saniye boyunca sistemden haber alınamazsa ESP32'yi zorla Resetler!
+  esp_task_wdt_init(45, true); 
+  esp_task_wdt_add(NULL);      
+
   if(!SD_MMC.begin("/sdcard", true)){ Serial.println("HATA: SD Kart Yok!"); return; }
   if(!SD_MMC.exists("/images")) SD_MMC.mkdir("/images");
   if(!SD_MMC.exists("/config")) SD_MMC.mkdir("/config");
@@ -90,8 +107,18 @@ void setup() {
   initKamera(); 
 
   WiFi.config(local_IP, gateway, subnet, dns);
+  
+  // YENİ: Wi-Fi'nin Kendi Kendine Bağlanma Modunu Aktif Et
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+  
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+  int connectCount = 0;
+  while (WiFi.status() != WL_CONNECTED && connectCount < 20) { 
+    delay(500); 
+    Serial.print("."); 
+    connectCount++;
+  }
   
   configTime(gmtOffset_sec, 0, ntpServer);
   addLog("Sistem baslatildi. IP: " + WiFi.localIP().toString());
@@ -101,16 +128,30 @@ void setup() {
 void loop() {
   server.handleClient(); 
   
+  // YENİ: Her döngüde Bekçi Köpeğine "Ben Yaşıyorum" sinyali gönder!
+  esp_task_wdt_reset(); 
+  
+  unsigned long currentMillis = millis();
+  
+  // YENİ: Wi-Fi Kopma Kontrolü (Her 30 Saniyede Bir)
+  if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      if (WiFi.status() != WL_CONNECTED) {
+          addLog("UYARI: Wi-Fi baglantisi koptu! Yeniden baglaniliyor...");
+          WiFi.disconnect();
+          WiFi.begin(ssid, password);
+      }
+  }
+  
   static unsigned long lastTimeCheck = 0;
-  if (millis() - lastTimeCheck > 10000) { 
-    lastTimeCheck = millis();
+  if (currentMillis - lastTimeCheck > 10000) { 
+    lastTimeCheck = currentMillis;
     struct tm timeinfo;
     if(getLocalTime(&timeinfo)){
       char timeStr[6]; strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
       char dateStr[11]; strftime(dateStr, sizeof(dateStr), "%d.%m.%Y", &timeinfo);
-      int currentMonth = timeinfo.tm_mon; // 0-11
+      int currentMonth = timeinfo.tm_mon; 
       
-      // YENİ: AY SONU OTOMATİK FATURA ENDEKSİ GÜNCELLEME KONTROLÜ
       if(last_checked_month != -1 && last_checked_month != currentMonth) {
         if(config_autoUpdateFatura == 1 && config_lastValue != "0" && config_lastValue != "") {
             config_faturaEndeks = config_lastValue;
@@ -121,7 +162,6 @@ void loop() {
       }
       last_checked_month = currentMonth;
 
-      // ZAMANLAYICI KONTROLÜ
       if(String(timeStr) == config_autoTime && String(dateStr) != last_auto_trigger_date) {
         last_auto_trigger_date = String(dateStr);
         performAutoReading(); 
