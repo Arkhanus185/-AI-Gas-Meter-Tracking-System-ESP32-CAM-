@@ -1,1 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Doğalgaz Takip</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header-stats">
+            <div>🔥 Durum: <span class="stat-box" id="sys-status">Bağlı</span></div>
+            <div>📶 Wi-Fi: <span class="stat-box" id="wifi-rssi">-- dBm</span></div>
+            <div>CPU: <span class="stat-box" id="cpu-temp">-- °C</span></div>
+        </div>
 
+        <div class="tabs" style="display:flex; flex-wrap:wrap;">
+            <button class="tab active" onclick="showTab('ana')">Ana Ekran</button>
+            <button class="tab" onclick="showTab('gecmis')">Tablo</button>
+            <button class="tab" onclick="showTab('kalibrasyon')">Kalibre</button>
+            <button class="tab" onclick="showTab('kotalar')">Kotalar</button>
+            <button class="tab" onclick="showTab('ayarlar')">Ayarlar</button>
+        </div>
+
+        <div id="ana" class="tab-content active">
+            <div class="info-panel">
+                <div style="font-size:12px; color:#aaa;">Son Fatura (Endeks - Tarih):</div>
+                <div style="font-size:16px; font-weight:bold; color:#fff;" id="ana-fatura-bilgi">Yükleniyor...</div>
+            </div>
+            <button id="cek-btn" onclick="fotografCek()">📸 Fotoğraf Çek</button>
+            <button id="okut-btn" class="btn-blue" onclick="yapayZekayaYolla()">🤖 Yapay Zekaya Okut</button>
+
+            <div id="sonuc-kutusu">
+                <div style="font-size: 14px; color: #ccc;">Okunan Güncel Endeks:</div>
+                <div class="buyuk-rakam" id="okunan-rakam">...</div>
+                <hr style="border-color:#00E676; margin: 15px 0;">
+                <div style="font-size: 14px; color: #ccc;">Faturadan Bu Yana Tüketim:</div>
+                <div class="tuketim-rakam" id="aylik-tuketim">...</div>
+            </div>
+
+            <div class="img-box">
+                <div class="date-badge" id="foto-tarih-etiket">Tarih Bekleniyor</div>
+                <img id="ana-foto" src="/latest.jpg" onerror="this.src=''">
+            </div>
+        </div>
+
+        <div id="gecmis" class="tab-content">
+            <h3 style="color:#00E676; text-align:center;">Geçmiş Okumalar</h3>
+            <table>
+                <thead>
+                    <tr><th>Tarih</th><th>Okunan</th><th>Fatura End.</th><th>Tüketim</th><th>İşlem</th></tr>
+                </thead>
+                <tbody id="tablo-govde">
+                    <tr><td colspan="5">Yükleniyor...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="kotalar" class="tab-content">
+            <div style="background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff9800; text-align:center;">
+                <h4 style="margin:0; color:#ff9800;">Aylık Doğalgaz Kotaları (m³)</h4>
+                <p style="margin:5px 0 0 0; font-size:12px; color:#aaa;">Kırgaz veya ilgili dağıtıcının belirlediği aylık sınırları girin.</p>
+            </div>
+            <div id="aylar-listesi" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div>
+            <button onclick="ayarlariKaydet()" style="margin-top: 20px; font-size:16px;">💾 Kotaları Kaydet</button>
+        </div>
+
+        <div id="kalibrasyon" class="tab-content">
+            <div style="background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff9800; text-align:center;">
+                <h4 style="margin:0; color:#ff9800;">Akıllı Hizalama ve Kutu Paneli</h4>
+                <p style="margin:5px 0 0 0; font-size:12px; color:#aaa;">Izgaraya göre sayacı düzeltmek için <b>Açı Döndürme</b> çubuğunu kullanın. Rakamı yeşil kesik kutuya oturtun.</p>
+            </div>
+            
+            <button class="btn-blue" onclick="kalibrasyonResmiYenile()" style="margin-bottom: 5px; display:block; width:100%; background:#2196F3; font-weight:bold;">🔄 Kayıtlı Referans Resmi Yükle</button>
+            <button id="ref-btn" onclick="kalibrasyonReferansCek()" style="margin-bottom: 15px; display:block; width:100%; background:#673AB7; font-weight:bold;">📸 Yeni Referans Fotoğrafı Sabitle</button>
+            
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #333;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-size:13px; font-weight:bold; color:#ff9800;">🔄 Resim Açı Döndürme:</label>
+                    <span id="rotation-val" style="font-weight:bold; color:#00E676; background:#000; padding:2px 8px; border-radius:4px;">0.0°</span>
+                </div>
+                <input type="range" id="rotation-slider" min="-45" max="45" step="0.5" value="0" oninput="aciDegisti(this.value)" style="width:100%; margin:5px 0 10px 0;">
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-blue" onclick="gridGosterAçKapa()" style="padding:6px; font-size:12px; margin:0; flex:1;">📏 Hizalama Izgarası</button>
+                    <button class="btn-red" onclick="aciSifirla()" style="padding:6px; font-size:12px; margin:0; flex:1;">↩️ Açıyı Sıfırla (0°)</button>
+                </div>
+            </div>
+
+            <div class="canvas-container" style="position:relative; margin-bottom: 15px;">
+                <canvas id="roi-canvas" style="cursor: grab;"></canvas>
+            </div>
+            
+            <div style="background: #111; padding: 10px; border-radius: 8px;">
+                <h4 style="margin-top: 0; margin-bottom:10px; color: #00E676;">Kutu (ROI) Koordinatları</h4>
+                <div id="kutu-listesi"></div>
+                <button class="btn-blue" onclick="yeniKutuEkle()" style="margin-top: 10px; width: 100%; font-weight:bold;">➕ Yeni Standart Kutu Ekle</button>
+            </div>
+            
+            <button onclick="koordinatlariKaydet()" style="margin-top: 15px; display:block; width:100%; font-size:16px;">💾 Koordinatları ve Açıyı Kaydet</button>
+        </div>
+
+        <div id="ayarlar" class="tab-content">
+            <div class="setting-group">
+                <h4>🧠 Yapay Zeka Motoru</h4>
+                <select id="set-ai-engine">
+                    <option value="gemini">Bulut (Gemini API - İnternet Gerektirir)</option>
+                    <option value="tflite">Yerel (ESP32 TFLite - İnternetsiz)</option>
+                </select>
+                <label>Gemini API Anahtarı:</label>
+                <input type="password" id="set-api" placeholder="AIzaSyA...">
+            </div>
+
+            <div class="setting-group" style="border-left-color: #E91E63;">
+                <h4 style="color:#E91E63;">📧 Kota Uyarı ve E-Posta Ayarları</h4>
+                <label>Google Apps Script URL (Webhook):</label>
+                <input type="text" id="set-webhook" placeholder="https://script.google.com/macros/s/...">
+                <label>Kota Sınırı Uyarısı (% Yüzde):</label>
+                <input type="number" id="set-mail-yuzde" min="1" max="100" placeholder="Örn: 90">
+                <label>Alıcı E-Posta Adresleri:</label>
+                <div id="mail-listesi"></div>
+                <button class="btn-blue btn-sm" onclick="yeniMailEkle()" style="margin-top:10px; width:100%; font-weight:bold;">➕ Yeni E-Posta Adresi Ekle</button>
+            </div>
+
+            <div class="setting-group">
+                <h4>📜 Fatura & Zamanlayıcı</h4>
+                <label>Son Fatura Endeksi (m³):</label>
+                <input type="number" id="fatura-endeks">
+                <label>Son Fatura Tarihi:</label>
+                <input type="date" id="fatura-tarih">
+                
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-top:15px; background:#222; padding:10px; border-radius:5px; border:1px solid #444;">
+                    <input type="checkbox" id="set-auto-fatura" style="width:20px; height:20px; margin:0;">
+                    <span style="font-size:13px; color:#00E676; font-weight:bold;">🗓️ Ay Sonunda Fatura Endeksini Otomatik Güncelle</span>
+                </label>
+
+                <label style="margin-top:15px;">Otomatik Çekim Saati (Örn: 14:00):</label>
+                <input type="time" id="set-autotime">
+            </div>
+
+            <div class="setting-group">
+                <h4>📷 Kamera Ayarları</h4>
+                <label>Çözünürlük (TFLite İçin VGA Zorunludur):</label>
+                <select id="set-framesize" disabled>
+                    <option value="6">VGA (640x480)</option>
+                </select>
+                <label>JPEG Kalitesi (10: En İyi, 63: En Kötü):</label>
+                <input type="number" id="set-quality" min="10" max="63">
+                <label>Flaş Kullanımı:</label>
+                <select id="set-flash">
+                    <option value="1">Açık</option>
+                    <option value="0">Kapalı</option>
+                </select>
+                <label>Flaş Şiddeti (0-255):</label>
+                <input type="number" id="set-pwm" min="0" max="255">
+                <label>Çekim Öncesi Flaş Isınma (ms):</label>
+                <input type="number" id="set-wait">
+            </div>
+
+            <button onclick="ayarlariKaydet()">💾 Tüm Ayarları Kaydet</button>
+            <button class="btn-red" style="margin-top:10px;" onclick="window.open('/log', '_blank')">📝 Logları İncele</button>
+        </div>
+    </div>
+
+    <div id="img-modal" onclick="modalKapat()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; padding:20px; box-sizing:border-box;">
+        <img id="modal-img" src="" style="max-width:100%; max-height:80vh; border:2px solid #00E676; border-radius:8px;">
+        <div id="modal-title" style="margin-top:10px; color:#fff; font-weight:bold;"></div>
+        <button onclick="modalKapat()" class="btn-red" style="margin-top:15px; width:150px;">Kapat</button>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

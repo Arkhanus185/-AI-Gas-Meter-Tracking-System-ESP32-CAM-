@@ -1,1 +1,31 @@
-
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #121212; color: #fff; margin: 0; padding: 10px; }
+.container { max-width: 600px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+.header-stats { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; border: 1px solid #444; }
+.stat-box { color: #00E676; font-weight: bold; }
+.tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #333; }
+.tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; background: #2a2a2a; border: none; color: white; outline: none; font-size: 14px;}
+.tab.active { background: #4CAF50; font-weight: bold; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.info-panel { background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; border: 1px solid #444; }
+button { width: 100%; padding: 12px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px; background: #4CAF50; color: white; font-weight: bold;}
+button:disabled { background: #555; cursor: not-allowed; }
+.btn-red { background: #f44336; }
+.btn-blue { background: #2196F3; }
+.img-box { margin-top: 15px; text-align: center; position: relative;}
+.img-box img { width: 100%; border-radius: 8px; border: 2px solid #444; }
+.date-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; font-size: 12px; color: #00E676; }
+.canvas-container { position: relative; width: 100%; overflow: auto; text-align: center; border: 2px solid #444; border-radius: 8px; background: #000; }
+canvas { max-width: 100%; height: auto; display: block; margin: 0 auto;}
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;}
+th, td { padding: 10px; border-bottom: 1px solid #444; text-align: left; }
+th { background: #333; color: #4CAF50; }
+tr:hover { background: #2a2a2a; }
+.btn-sm { padding: 5px 8px; font-size: 11px; border-radius: 4px; display: inline-block; text-decoration: none; background: #4CAF50; color: white; margin: 2px; cursor: pointer; width: auto;}
+.btn-del { background: #f44336; }
+input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; }
+.setting-group { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;}
+h4 { margin-top: 0; color: #4CAF50;}
+#sonuc-kutusu { display: none; background: #003300; border: 2px solid #00E676; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center; }
+.buyuk-rakam { font-size: 36px; font-weight: bold; color: #00E676; }
+.tuketim-rakam { font-size: 28px; font-weight: bold; color: #ff9800; margin-top: 5px; }
